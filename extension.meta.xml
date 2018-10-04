@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<extension id="export_data" status="released" xmlns="http://getsymphony.com/schemas/extension/1.0">
+	<name>Export Data</name>
+	<description>Easily export entry data as either JSON or SQL</description>
+	<repo type="github">https://github.com/pointybeard/export_data</repo>
+	<types>
+			<type>Utility</type>
+	</types>
+	<authors>
+			<author>
+					<name github="pointybeard" symphony="team">Alannah Kearney</name>
+					<website>http://alannahkearney.com</website>
+			</author>
+	</authors>
+	<releases>
+		<release version="1.0.0" date="2018-10-04" min="2.6.x">
+			- Initial release
+		</release>
+	</releases>
+</extension>

@@ -1,0 +1,20 @@
+{
+    "name": "pointybeard/export-data",
+    "version": "1.0.0",
+    "description": "Easily export entry data as either JSON or SQL",
+    "homepage": "https://github.com/pointybeard/export_data",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Alannah Kearney",
+            "email": "hi@alannahkearney.com",
+            "homepage": "http://alannahkearney.com",
+            "role": "Developer"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+        "php": ">=5.6.6",
+        "pointybeard/symphony-pdo": "~0.1"
+    }
+}
