@@ -113,7 +113,7 @@ Class extension_export_data extends Extension
 
         $deleteQuery = sprintf($deleteQuery, implode(",", $entryIds));
 
-        return
+        $sql =
             "-- Delete Existing Entries (optional)" . PHP_EOL .
             sprintf(
                 implode(PHP_EOL, $deleteQueries),
@@ -121,6 +121,11 @@ Class extension_export_data extends Extension
             ) . PHP_EOL . PHP_EOL .
             $sql
         ;
+
+        // Clean up. Remove quotes from around digit only values.
+        $sql = preg_replace("@'(\d+)'@", '$1', $sql);
+
+        return $sql;
     }
 
     public function export($type, array $ids) {
