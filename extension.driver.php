@@ -1,6 +1,6 @@
 <?php
 
-if(!file_exists(__DIR__ . '/vendor/autoload.php')) {
+if (!file_exists(__DIR__ . '/vendor/autoload.php')) {
     throw new Exception(sprintf(
         "Could not find composer autoload file %s. Did you run `composer update` in %s?",
         __DIR__ . '/vendor/autoload.php',
@@ -10,9 +10,10 @@ if(!file_exists(__DIR__ . '/vendor/autoload.php')) {
 
 require_once __DIR__ . '/vendor/autoload.php';
 
-Class extension_export_data extends Extension
-{
+use ExportSectionData\Lib;
 
+class extension_export_data extends Extension
+{
     const EXPORT_TYPE_SQL = 'sql';
     const EXPORT_TYPE_JSON = 'json';
 
@@ -33,7 +34,8 @@ Class extension_export_data extends Extension
         ];
     }
 
-    public function appendWithSelected($context) {
+    public function appendWithSelected($context)
+    {
         array_splice($context['options'], 2, 0, [[
             "label" => "Export Data",
             "options" => [
@@ -43,94 +45,145 @@ Class extension_export_data extends Extension
         ]]);
     }
 
-    public function checkWithSelected($context) {
+    public function checkWithSelected($context)
+    {
+        if (!isset($_POST['with-selected']) || !preg_match("@^extension-export-data-(json|sql)$@", $_POST['with-selected'], $matches)) {
+            return;
+        }
 
-      if(!isset($_POST['with-selected']) || !preg_match("@^extension-export-data-(json|sql)$@", $_POST['with-selected'], $matches)) {
-        return;
-      }
+        $type = $matches[1];
 
-      $type = $matches[1];
+        $output = $this->export($type, $context['checked']);
 
-      $sql = $this->export($type, $context['checked']);
-
-      header('Content-Type: application/octet-stream');
-      header("Content-Transfer-Encoding: Binary");
-      header(sprintf(
+        header('Content-Type: application/octet-stream');
+        header("Content-Transfer-Encoding: Binary");
+        header(sprintf(
           'Content-disposition: attachment; filename="export_data-%s.%s',
-          date('Ymd_His'), $type
+          date('Ymd_His'),
+          $type
       ));
-      print $sql;
-      exit;
+        print $output;
+        exit;
     }
 
-    private function buildSQL(array $entries) {
+    private function __toJSON(array $entries)
+    {
+        $fieldsToUnset = ['author_id', 'section_id', 'id', 'modification_author_id'];
+        for ($ii = 0; $ii < count($entries); $ii++) {
+            foreach ($fieldsToUnset as $f) {
+                unset($entries[$ii]->$f);
+            }
 
-        $deleteQueries = [
-            "-- DELETE FROM `tbl_entries` WHERE `id` IN (%1\$s);"
+            for ($kk = 0; $kk < count($entries[$ii]->data); $kk++) {
+                unset($entries[$ii]->data[$kk]->entry_id);
+            }
+        }
+
+        return json_encode($entries, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    }
+    
+    private function buildInsert($table, $data, $exclude=[], $numericFields = [
+        'id',
+        '.+_id',
+        'sortorder',
+        'parent_section'
+    ], $nullFields = [
+        'date', 'relation_id', 'handle', 'value',
+    ])
+    {
+        $insert = new Lib\Insert(
+            $table, $exclude, $numericFields, $nullFields
+        );
+        
+        $sql = "";
+        $first = true;
+        foreach($data as $fields) {
+            
+            $i = clone $insert;
+
+            foreach($fields as $name => $value) {
+                $i->$name = $value;
+            }
+            
+            if($first) {
+                $sql = sprintf(
+                    "INSERT INTO `%s` (%s) VALUES\n\t(%s)",
+                    $table,
+                    $insert->names(),
+                    $insert->values()
+                );
+                $first = false;
+                continue;
+            }
+            
+            $sql .= sprintf(", \n\t(%s)", $insert->values());
+
+        }
+        
+        return "{$sql};";
+
+    }
+
+    private function __toSQL(array $entries)
+    {
+        $tables = [
+            'tbl_entries'
         ];
 
         $entryIds = [];
-
-        $sql = "-- *** `tbl_entries` ***" . PHP_EOL . "INSERT INTO `tbl_entries` (`id`, `section_id`, `author_id`, `modification_author_id`, `creation_date`, `creation_date_gmt`, `modification_date`, `modification_date_gmt`) VALUES " . PHP_EOL;
-
-        foreach($entries as $e) {
+        foreach ($entries as $e) {
             $entryIds[] = $e->id;
-            $string = NULL;
-            foreach($e as $field => $value) {
-                if($field == 'data') continue;
-                $string .= "'{$value}', ";
-            }
-            $string = trim($string, ", ");
-
-            $sql .= "({$string}), ". PHP_EOL;
         }
-        $sql = trim($sql, ", \r\n") . ";" . PHP_EOL;
+        
+        $sql = "-- *** `tbl_entries` ***" . PHP_EOL;
+        $sql .= $this->buildInsert(
+            'tbl_entries', $entries, ['data', 'section_handle']
+        ) . PHP_EOL;
 
-        foreach($entries as $e) {
+        // Entry Data
+        foreach ($entries as $e) {
             $sql .= PHP_EOL . "-- *** Entry {$e->id} ***" . PHP_EOL;
 
-            foreach($e->data as $d) {
-                if(!isset($deleteQueries[$d->field_id])) {
-                    $deleteQueries[$d->field_id] = sprintf(
-                        "-- DELETE FROM `tbl_entries_data_%s` WHERE `entry_id` IN",
-                        $d->field_id
-                    ) .  "(%1\$s);";
+            foreach ($e->data as $d) {
+                if(!in_array("tbl_entries_data_{$d->field_id}", $tables)) {
+                    $tables[] = "tbl_entries_data_{$d->field_id}";
                 }
 
-                $sql .= "INSERT INTO `tbl_entries_data_{$d->field_id}` " . "(`id`, ";
-
-                $string = NULL;
-                foreach($d as $field => $value) {
-                    if($field == 'field_id') continue;
-                    $string .= "'{$value}', ";
-                    $sql .= "`{$field}`, ";
-                }
-                $string = trim($string, ", ");
-                $sql = trim($sql, ", ");
-                $sql .= ") VALUES (NULL, $string);" . PHP_EOL;
+                $sql .= $this->buildInsert(
+                    "tbl_entries_data_{$d->field_id}", [$d], ['field_id'], ['.+_id'], ['id', 'date', 'relation_id']
+                ) . PHP_EOL;
             }
         }
+    
+        $entryIds = implode(",", $entryIds);
+        $deleteQueries = "";
+        foreach($tables as $t) {
+            $deleteQueries .= sprintf(
+                "-- DELETE FROM `%s` WHERE `id` IN (%s);",
+                $t, $entryIds
+            ) . PHP_EOL;
+        }
 
-        $deleteQuery = sprintf($deleteQuery, implode(",", $entryIds));
+        $sql = sprintf("-- ****************************************************
+-- Export Data
+--
+-- Generated At: %s
+-- ****************************************************
 
-        $sql =
-            "-- Delete Existing Entries (optional)" . PHP_EOL .
-            sprintf(
-                implode(PHP_EOL, $deleteQueries),
-                implode(',', $entryIds)
-            ) . PHP_EOL . PHP_EOL .
-            $sql
-        ;
+-- Delete Existing Entries (optional)
 
-        // Clean up. Remove quotes from around digit only values.
-        $sql = preg_replace("@'(\d+)'@", '$1', $sql);
+%s
+",
+            date(DATE_RFC2822),
+            $deleteQueries
+        ) . PHP_EOL . PHP_EOL . $sql;
 
         return $sql;
     }
 
-    public function export($type, array $ids) {
-
-        $sqlResult = NULL;
+    public function export($type, array $ids)
+    {
+        $sqlResult = null;
 
         $db = \SymphonyPDO\Loader::instance();
 
@@ -140,7 +193,10 @@ Class extension_export_data extends Extension
         ];
 
         $query = $db->prepare(sprintf(
-            "SELECT `section_id` FROM `tbl_entries` WHERE `id` IN (%s) LIMIT 1",
+            "SELECT e.section_id
+            FROM `tbl_entries` as `e`
+            WHERE e.id IN (%s)
+            LIMIT 1",
             implode(',', $ids)
         ));
         $query->execute();
@@ -151,14 +207,23 @@ Class extension_export_data extends Extension
         $query->execute([':section' => $sectionId]);
         $fields = $query->fetchAll(\PDO::FETCH_OBJ);
 
-        $query = $db->prepare(sprintf("SELECT * FROM `tbl_entries` WHERE `id` IN (%s)", implode(',', $ids)));
+        $query = $db->prepare(
+            sprintf(
+            "SELECT e.*, s.handle as `section_handle`
+            FROM `tbl_entries` as `e`
+            INNER JOIN `tbl_sections` as `s` ON e.section_id = s.id
+            WHERE e.id IN (%s)",
+            implode(',', $ids)
+        )
+        );
+
         $query->execute();
-        foreach($query->fetchAll(\PDO::FETCH_OBJ) as $row) {
+        foreach ($query->fetchAll(\PDO::FETCH_OBJ) as $row) {
             $row->data = [];
-            foreach($fields as $f) {
+            foreach ($fields as $f) {
                 $query = $db->prepare(sprintf("SELECT * FROM `tbl_entries_data_%s` WHERE `entry_id` = :id", $f->id));
                 $query->execute([":id" => $row->id]);
-                foreach($query->fetchAll(\PDO::FETCH_OBJ) as $d) {
+                foreach ($query->fetchAll(\PDO::FETCH_OBJ) as $d) {
                     unset($d->id);
                     $d->field_id = $f->id;
                     $row->data[] = $d;
@@ -168,11 +233,10 @@ Class extension_export_data extends Extension
             $result->entries[] = $row;
         }
 
-        if($type == self::EXPORT_TYPE_JSON) {
-            return json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+        if ($type == self::EXPORT_TYPE_JSON) {
+            return $this->__toJSON($result->entries);
+        } else {
+            return $this->__toSQL($result->entries);
         }
-
-        return $this->buildSQL($result->entries);
     }
-
 }
