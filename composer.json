@@ -1,6 +1,6 @@
 {
-    "name": "pointybeard/export-data",
-    "version": "1.0.0",
+    "name": "pointybeard/export-section-data",
+    "version": "1.0.1",
     "description": "Easily export entry data as either JSON or SQL",
     "homepage": "https://github.com/pointybeard/export_data",
     "license": "MIT",
@@ -16,5 +16,10 @@
     "require": {
         "php": ">=5.6.6",
         "pointybeard/symphony-pdo": "~0.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "ExportSectionData\\": "src/"
+        }
     }
 }

@@ -1,7 +1,7 @@
 # Export Data Extension for SymphonyCMS
 
-- Version: v1.0.0
-- Date: 4th Oct 2018
+- Version: 1.0.1
+- Date: 3rd Nov 2018
 - [Release notes](https://github.com/pointybeard/export_data/blob/master/CHANGELOG.md)
 - [GitHub repository](https://github.com/export_data/export_data)
 
