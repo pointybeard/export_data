@@ -81,7 +81,7 @@ class extension_export_data extends Extension
 
         return json_encode($entries, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     }
-    
+
     private function buildInsert($table, $data, $exclude=[], $numericFields = [
         'id',
         '.+_id',
@@ -94,17 +94,17 @@ class extension_export_data extends Extension
         $insert = new Lib\Insert(
             $table, $exclude, $numericFields, $nullFields
         );
-        
+
         $sql = "";
         $first = true;
         foreach($data as $fields) {
-            
+
             $i = clone $insert;
 
             foreach($fields as $name => $value) {
                 $i->$name = $value;
             }
-            
+
             if($first) {
                 $sql = sprintf(
                     "INSERT INTO `%s` (%s) VALUES\n\t(%s)",
@@ -115,11 +115,11 @@ class extension_export_data extends Extension
                 $first = false;
                 continue;
             }
-            
+
             $sql .= sprintf(", \n\t(%s)", $insert->values());
 
         }
-        
+
         return "{$sql};";
 
     }
@@ -134,7 +134,7 @@ class extension_export_data extends Extension
         foreach ($entries as $e) {
             $entryIds[] = $e->id;
         }
-        
+
         $sql = "-- *** `tbl_entries` ***" . PHP_EOL;
         $sql .= $this->buildInsert(
             'tbl_entries', $entries, ['data', 'section_handle']
@@ -154,12 +154,12 @@ class extension_export_data extends Extension
                 ) . PHP_EOL;
             }
         }
-    
+
         $entryIds = implode(",", $entryIds);
         $deleteQueries = "";
         foreach($tables as $t) {
             $deleteQueries .= sprintf(
-                "-- DELETE FROM `%s` WHERE `id` IN (%s);",
+                "-- DELETE FROM `%s` WHERE `entry_id` IN (%s);",
                 $t, $entryIds
             ) . PHP_EOL;
         }
