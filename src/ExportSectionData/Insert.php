@@ -1,38 +1,47 @@
 <?php
-namespace ExportSectionData\ExportSectionData;
 
-class Insert {
+declare(strict_types=1);
+
+namespace pointybeard\Symphony\Extensions\ExportSectionData;
+
+class Insert
+{
     private $exclude;
     private $numeric;
     private $null;
     private $table;
     private $fields;
 
-    public function __construct($table, $exclude=[], $numeric=[], $null=[]) {
+    public function __construct(string $table, array $exclude = [], array $numeric = [], array $null = [])
+    {
         $this->table = $table;
         $this->exclude = $exclude;
         $this->numeric = $numeric;
         $this->null = $null;
-        $this->fields = (object)[];
+        $this->fields = (object) [];
     }
 
-    public function __set($name, $value) {
+    public function __set(string $name, $value)
+    {
         $this->fields->$name = $value;
+        return $this;
     }
 
-    public function __get($name) {
+    public function __get(string $name)
+    {
         return $this->fields->$name;
     }
 
-    public function values() {
+    public function values(): string
+    {
         $values = [];
         foreach ($this->fields as $key => $value) {
-            if(in_array($key, $this->exclude)) {
+            if (in_array($key, $this->exclude)) {
                 continue;
             }
             // Set NULL fields
             foreach ($this->null as $pattern) {
-                if (preg_match("@^{$pattern}$@i", $key) && (is_null($value) || strlen(trim($value)) <= 0)) {
+                if (preg_match("@^{$pattern}$@i", $key) && (null === $value || strlen(trim($value)) <= 0)) {
                     $values[] = 'NULL';
                     continue 2;
                 }
@@ -47,27 +56,32 @@ class Insert {
 
             $values[] = sprintf("'%s'", \MySQL::cleanValue($value));
         }
+
         return implode(', ', $values);
     }
 
-    public function names() {
+    public function names(): string
+    {
         $names = [];
         foreach ($this->fields as $name => $value) {
-            if(in_array($name, $this->exclude)) {
+            if (in_array($name, $this->exclude)) {
                 continue;
             }
             $names[] = $name;
         }
-        return sprintf("`%s`", implode('`, `', $names));
+
+        return sprintf('`%s`', implode('`, `', $names));
     }
 
-    public function table() {
+    public function table(): string
+    {
         return $this->table;
     }
 
-    public function __toString() {
+    public function __toString()
+    {
         return sprintf(
-            "INSERT INTO %s (%s) VALUES (%s);",
+            'INSERT INTO %s (%s) VALUES (%s);',
             $this->table,
             $this->names(),
             $this->values()

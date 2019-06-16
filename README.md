@@ -1,26 +1,25 @@
-# Export Data Extension for SymphonyCMS
+# Export Data Extension for Symphony CMS
 
-- Version: 1.0.1
-- Date: 3rd Nov 2018
+- Version: 1.1.0
+- Date: 16 June 2019
 - [Release notes](https://github.com/pointybeard/export_data/blob/master/CHANGELOG.md)
 - [GitHub repository](https://github.com/export_data/export_data)
 
-Easily export selected entries as either JSON or SQL.
+A [Symphony CMS](https://www.getsymphony.com/) extension for exporting entry data as either JSON or SQL.
 
-## INSTALLATION
+## Installation
 
-Information about [installing and updating extensions](http://getsymphony.com/learn/tasks/view/install-an-extension/) can be found in the Symphony documentation at <http://getsymphony.com/learn/>.
+This is an extension for Symphony CMS. Add it to your `/extensions` folder in your Symphony CMS installation, run `composer update` to install required packages and then enable it though the interface.
 
 ### Requirements
 
-This extension requires the **[Symphony PDO library](https://github.com/pointybeard/symphony-pdo)** (`pointybeard/symphony-pdo`) to be installed via Composer. Either require this in your main `composer.json` file, or run `composer install` on the `extension/export_data` directory.
+This extension requires PHP 7.3 or greater. For use with earlier version of PHP, please use version 1.0.1 of this extension instead (`git clone -b1.0.1 https://github.com/pointybeard/export_data.git`).
 
-```json
-"require": {
-  "php": ">=5.6.6",
-  "pointybeard/symphony-pdo": "~0.1"
-}
-```
+This extension depends on the following Composer libraries:
+
+-   [SymphonyCMS PDO Connector](https://github.com/pointybeard/symphony-pdo)
+
+Run `composer update` on the `extension/export_data` directory to install these.
 
 ## Usage
 
@@ -37,4 +36,4 @@ We encourage you to contribute to this project. Please check out the [Contributi
 
 ## License
 
-"Export Data Extension for SymphonyCMS" is released under the [MIT License](http://www.opensource.org/licenses/MIT).
+"Export Data Extension for Symphony CMS" is released under the [MIT License](http://www.opensource.org/licenses/MIT).

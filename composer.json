@@ -1,6 +1,6 @@
 {
     "name": "pointybeard/export-section-data",
-    "description": "Easily export entry data as either JSON or SQL",
+    "description": "A Symphony CMS extension for exporting entry data as either JSON or SQL",
     "homepage": "https://github.com/pointybeard/export_data",
     "license": "MIT",
     "authors": [
@@ -13,6 +13,7 @@
     ],
     "minimum-stability": "stable",
     "require": {
+        "php": ">=7.2",
         "pointybeard/symphony-pdo": "~0.1.0"
     },
     "autoload": {
