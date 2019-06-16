@@ -10,9 +10,9 @@ if (!file_exists(__DIR__ . '/vendor/autoload.php')) {
 
 require_once __DIR__ . '/vendor/autoload.php';
 
-use ExportSectionData\Lib;
+use ExportSectionData\ExportSectionData;
 
-class extension_export_data extends Extension
+class Extension_Export_Data extends Extension
 {
     const EXPORT_TYPE_SQL = 'sql';
     const EXPORT_TYPE_JSON = 'json';
@@ -91,7 +91,7 @@ class extension_export_data extends Extension
         'date', 'relation_id', 'handle', 'value',
     ])
     {
-        $insert = new Lib\Insert(
+        $insert = new ExportSectionData\Insert(
             $table, $exclude, $numericFields, $nullFields
         );
 

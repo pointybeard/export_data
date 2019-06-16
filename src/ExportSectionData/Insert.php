@@ -1,5 +1,5 @@
 <?php
-namespace ExportSectionData\Lib;
+namespace ExportSectionData\ExportSectionData;
 
 class Insert {
     private $exclude;
@@ -7,7 +7,7 @@ class Insert {
     private $null;
     private $table;
     private $fields;
-    
+
     public function __construct($table, $exclude=[], $numeric=[], $null=[]) {
         $this->table = $table;
         $this->exclude = $exclude;
@@ -15,11 +15,11 @@ class Insert {
         $this->null = $null;
         $this->fields = (object)[];
     }
-    
+
     public function __set($name, $value) {
         $this->fields->$name = $value;
     }
-    
+
     public function __get($name) {
         return $this->fields->$name;
     }
@@ -49,7 +49,7 @@ class Insert {
         }
         return implode(', ', $values);
     }
-    
+
     public function names() {
         $names = [];
         foreach ($this->fields as $name => $value) {
@@ -60,7 +60,7 @@ class Insert {
         }
         return sprintf("`%s`", implode('`, `', $names));
     }
-    
+
     public function table() {
         return $this->table;
     }
